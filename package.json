@@ -1,0 +1,21 @@
+{
+  "name": "bloglist-server",
+  "version": "1.0.0",
+  "description": "\"\"",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \u001b[1;7 \\ \"Error: no test specified \u001b[1;7\\\u001b[D\\\" && exit 1\""
+  },
+  "author": "Juha",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.2"
+  }
+}
