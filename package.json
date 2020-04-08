@@ -9,7 +9,7 @@
     "test": "echo \u001b[1;7 \\ \"Error: no test specified \u001b[1;7\\\u001b[D\\\" && exit 1\"",
     "build:ui": "rm -rf build && cd f:/bloglist-app && npm run build --prod && cp -r build f:/bloglist-server",
     "deploy": "git push heroku master",
-    "deploy:full": "npm run build:ui && git add . && git commit -m uibuild && git push && npm run deploy",
+    "deploy:full": "npm run build:ui && git add . && git commit -m uibuild && npm run deploy",
     "logs:prod": "heroku logs --tail"
   },
   "author": "Juha",
