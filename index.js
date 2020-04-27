@@ -12,18 +12,20 @@ app.use(express.static("build"));
 app.use(express.json());
 
 app.get("/api/blogs", (request, response) => {
-  Blog.find({}).then((blogs) => {
-    response.json(blogs.map((blog) => blog.toJSON()));
-  });
+  Blog.find({})
+    .then((blogs) => {
+      response.json(blogs.map((blog) => blog.toJSON()));
+    })
+    .catch((error) => console.log(error));
 });
 
-app.get("/api/blogs/:id", (request, response, next) => {
+app.get("api/blogs/:id", (request, response, next) => {
   Blog.findById(request.params.id)
     .then((blog) => {
       if (blog) {
         response.json(blog.toJSON());
       } else {
-        response.status(404).end();
+        response.status(204).end();
       }
     })
     .catch((error) => next(error));
@@ -32,7 +34,7 @@ app.get("/api/blogs/:id", (request, response, next) => {
 app.post("/api/blogs", (request, response) => {
   const body = request.body;
   console.log(body);
-  if (body.content === undefined) {
+  if (body === undefined) {
     return response.status(400).json({ error: "content missing" });
   }
   const blog = new Blog({
@@ -40,9 +42,13 @@ app.post("/api/blogs", (request, response) => {
     name: body.name,
     url: body.url,
   });
-  blog.save().then((savedBlog) => {
-    response.json(savedBlog.toJSON());
-  });
+  blog
+    .save()
+    .then((savedBlog) => savedBlog.toJSON())
+    .then((savedAndFormattedBlog) => {
+      response.json(savedAndFormattedBlog);
+    })
+    .catch((error) => next(error));
 });
 
 app.delete("/api/blogs/:id", (request, response, next) => {
