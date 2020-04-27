@@ -1,80 +1,72 @@
+require("dotenv").config();
 const express = require("express");
 const app = express();
+const Blog = require("./models/blog");
+
 const cors = require("cors");
 
 app.use(cors());
 
-app.use(express.json());
-
 app.use(express.static("build"));
 
-const blogs = [
-  {
-    content: "Blogi",
-    name: "Blogger",
-    url: "www.www.fi",
-    id: 1
-  },
-  {
-    content: "Bloggaaja",
-    name: "Blogaaja",
-    url: "www.www.com",
-    id: 2
-  },
-  {
-    content: "Blog",
-    name: "blogger",
-    url: "www.www.org",
-    id: 3
-  }
-];
-
-app.get("/", (request, response) => {
-  response.send("<h1>Hello World!</h1>");
-});
+app.use(express.json());
 
 app.get("/api/blogs", (request, response) => {
-  response.json(blogs);
+  Blog.find({}).then((blogs) => {
+    response.json(blogs.map((blog) => blog.toJSON()));
+  });
 });
 
-app.get("/api/blogs/:id", (request, response) => {
-  const id = Number(request.params.id);
-  const blog = blogs.find(blog => blog.id === id);
-  if (blog) {
-    response.json(blog);
-  } else {
-    response.status(404).end;
-  }
+app.get("/api/blogs/:id", (request, response, next) => {
+  Blog.findById(request.params.id)
+    .then((blog) => {
+      if (blog) {
+        response.json(blog.toJSON());
+      } else {
+        response.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
 });
-
-const generateId = () => {
-  const maxId = blogs.length > 0 ? Math.max(...blogs.map(b => b.id)) : 0;
-  return maxId + 1;
-};
 
 app.post("/api/blogs", (request, response) => {
   const body = request.body;
-  if (!body.content) {
-    return response.status(400).json({
-      error: "content missing"
-    });
+  console.log(body);
+  if (body.content === undefined) {
+    return response.status(400).json({ error: "content missing" });
   }
-
-  const newBlog = {
+  const blog = new Blog({
     content: body.content,
     name: body.name,
     url: body.url,
-    id: generateId()
-  };
-
-  blogs = blogs.concat(newBlog);
-  response.json(newBlog);
+  });
+  blog.save().then((savedBlog) => {
+    response.json(savedBlog.toJSON());
+  });
 });
 
-app.delete("/api/blogs/:id", (request, response) => {
-  const id = Number(request.params.id);
-  const updatedBlog = blogs.filter(blog => blog.id !== id);
-  response.status(204).end();
+app.delete("/api/blogs/:id", (request, response, next) => {
+  Blog.findByIdAndRemove(request.params.id)
+    .then((result) => {
+      response.status(204).end();
+    })
+    .catch((error) => next(error));
+});
+
+app.put("/api/blogs/:id", (request, response, next) => {
+  const body = request.body;
+
+  const updatedInfo = {
+    content: body.content,
+    name: body.name,
+    url: body.url,
+  };
+
+  Blog.findByIdAndUpdate(request.params.id, updatedInfo, { new: true })
+    .then((updatedBlog) => {
+      response.json(updatedBlog.toJSON());
+    })
+    .catch((error) => next(error));
 });
 
 const requestLogger = (request, response, next) => {
@@ -93,7 +85,19 @@ const unknownEndpoint = (request, response) => {
 
 app.use(unknownEndpoint);
 
-const PORT = process.env.PORT || 3001;
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  }
+
+  next(error);
+};
+
+app.use(errorHandler);
+
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
